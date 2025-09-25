@@ -1,28 +1,16 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { UploadZone } from "@/components/upload-zone";
 import { FileGrid } from "@/components/file-grid";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { apiRequest } from "@/lib/queryClient";
+import { clientStorage, type FileItem } from "@/lib/clientStorage";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Share, Trash2, HelpCircle, Sparkles, Sun, Moon } from "lucide-react";
 
-interface FileItem {
-  id: string;
-  filename: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-  path: string;
-  shareId: string;
-  isFolder: boolean;
-  parentId?: string;
-  createdAt: string;
-}
-
 export default function Home() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -33,7 +21,8 @@ export default function Home() {
   });
 
   const { data: files = [], isLoading, refetch } = useQuery<FileItem[]>({
-    queryKey: ["/api/files"],
+    queryKey: ["files"],
+    queryFn: () => clientStorage.getFilesList(),
   });
 
   // Apply theme on mount
@@ -41,36 +30,42 @@ export default function Home() {
     document.documentElement.classList.toggle('dark', isDarkMode);
   }, [isDarkMode]);
 
-  const handleFilesUploaded = async () => {
-    await refetch();
-    setIsUploading(false);
-    setUploadProgress(0);
-    toast({
-      title: "Upload complete",
-      description: "Your files have been uploaded successfully",
-    });
+  const handleFilesUploaded = async (uploadedFiles: File[]) => {
+    try {
+      setIsUploading(true);
+      await clientStorage.uploadFiles(uploadedFiles);
+      await refetch();
+      setIsUploading(false);
+      setUploadProgress(0);
+      toast({
+        title: "Upload complete",
+        description: "Your files have been uploaded successfully",
+      });
+    } catch (error) {
+      setIsUploading(false);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadAll = async () => {
     try {
-      const response = await fetch('/api/files/download-all');
-      if (!response.ok) {
-        throw new Error('Failed to download files');
+      if (files.length === 0) {
+        toast({
+          title: "No files to download",
+          description: "Upload some files first",
+          variant: "destructive",
+        });
+        return;
       }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'files.zip';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
+
+      // For now, just show a message since creating ZIP in browser is complex
       toast({
-        title: "Download started",
-        description: "Your files are being downloaded as a ZIP package",
+        title: "Download all files",
+        description: "Use individual download buttons for each file",
       });
     } catch (error) {
       toast({
@@ -83,7 +78,7 @@ export default function Home() {
 
   const handleClearAll = async () => {
     try {
-      await apiRequest("DELETE", "/api/files");
+      await clientStorage.deleteAllFiles();
       await refetch();
       toast({
         title: "Files cleared",

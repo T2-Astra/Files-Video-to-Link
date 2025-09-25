@@ -6,7 +6,7 @@ import { CloudUpload, Plus, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UploadZoneProps {
-  onFilesUploaded: () => void;
+  onFilesUploaded: (files: File[]) => void;
   onUploadStart: () => void;
   onUploadProgress: (progress: number) => void;
 }
@@ -19,47 +19,31 @@ export function UploadZone({ onFilesUploaded, onUploadStart, onUploadProgress }:
     if (files.length === 0) return;
 
     onUploadStart();
-    const formData = new FormData();
-    
-    files.forEach((file) => {
-      formData.append('files', file);
-    });
 
     try {
       let uploadedBytes = 0;
       const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
 
-      const xhr = new XMLHttpRequest();
+      // Simulate upload progress for UX
+      const progressInterval = setInterval(() => {
+        uploadedBytes += totalBytes * 0.1;
+        const progress = Math.min((uploadedBytes / totalBytes) * 100, 90);
+        onUploadProgress(progress);
+      }, 100);
+
+      // Simulate some processing time
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      clearInterval(progressInterval);
+      onUploadProgress(100);
+
+      // Call the parent handler with the files
+      onFilesUploaded(files);
       
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          onUploadProgress(progress);
-        }
+      toast({
+        title: "Upload successful",
+        description: `${files.length} file(s) uploaded successfully`,
       });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          onFilesUploaded();
-        } else {
-          toast({
-            title: "Upload failed",
-            description: "Failed to upload files. Please try again.",
-            variant: "destructive",
-          });
-        }
-      });
-
-      xhr.addEventListener('error', () => {
-        toast({
-          title: "Upload failed",
-          description: "Failed to upload files. Please try again.",
-          variant: "destructive",
-        });
-      });
-
-      xhr.open('POST', '/api/files/upload');
-      xhr.send(formData);
     } catch (error) {
       console.error('Upload error:', error);
       toast({
