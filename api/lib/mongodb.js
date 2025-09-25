@@ -1,7 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI || 'mongodb+srv://krish:krish1234@algox.6nclqwu.mongodb.net/';
-const dbName = 'mediacraft';
+const uri = 'mongodb+srv://krish:krish1234@algox.6nclqwu.mongodb.net/mediacraft?retryWrites=true&w=majority';
 
 let client;
 let db;
@@ -12,13 +11,9 @@ export async function connectToDatabase() {
   }
 
   try {
-    client = new MongoClient(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
+    client = new MongoClient(uri);
     await client.connect();
-    db = client.db(dbName);
+    db = client.db('mediacraft');
     
     console.log('Connected to MongoDB');
     return { db, client };

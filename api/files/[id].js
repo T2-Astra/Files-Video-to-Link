@@ -1,7 +1,7 @@
-import { connectToDatabase } from '../lib/mongodb.js';
-import { ObjectId } from 'mongodb';
+const { connectToDatabase } = require('../lib/mongodb.js');
+const { ObjectId } = require('mongodb');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { id } = req.query;
 
   if (!id) {
