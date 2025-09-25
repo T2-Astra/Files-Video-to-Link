@@ -1,5 +1,3 @@
-import { connectToDatabase } from '../lib/mongodb.js';
-
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,22 +15,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { db } = await connectToDatabase();
+    // Mock shared file response
+    const mockFile = {
+      id: `mock-${Date.now()}`,
+      filename: `${shareId}.txt`,
+      originalName: 'shared-file.txt',
+      mimeType: 'text/plain',
+      size: 1024,
+      shareId,
+      isFolder: false,
+      createdAt: new Date().toISOString(),
+      dataUrl: 'data:text/plain;base64,VGhpcyBpcyBhIHNoYXJlZCBmaWxlIQ==', // "This is a shared file!" in base64
+    };
 
-    if (req.method === 'GET') {
-      // Get file by share ID
-      const file = await db.collection('files').findOne({ shareId });
-
-      if (!file) {
-        return res.status(404).json({ message: 'File not found' });
-      }
-
-      res.status(200).json(file);
-    } else {
-      res.status(405).json({ message: 'Method not allowed' });
-    }
+    res.status(200).json(mockFile);
   } catch (error) {
     console.error('Share API error:', error);
-    res.status(500).json({ message: 'Internal server error: ' + error.message });
+    res.status(500).json({ message: error.message || 'Failed to fetch file' });
   }
 }

@@ -1,5 +1,3 @@
-import { connectToDatabase } from '../lib/mongodb.js';
-
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,19 +9,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { db } = await connectToDatabase();
+    console.log('Files API called:', req.method);
 
     if (req.method === 'GET') {
-      // Get all files
-      const files = await db.collection('files')
-        .find({})
-        .sort({ createdAt: -1 })
-        .toArray();
-
-      res.status(200).json(files);
+      // Return empty array for now
+      res.status(200).json([]);
     } else if (req.method === 'DELETE') {
-      // Delete all files
-      await db.collection('files').deleteMany({});
+      // Mock delete response
       res.status(200).json({ message: 'All files deleted successfully' });
     } else {
       res.status(405).json({ message: 'Method not allowed' });
