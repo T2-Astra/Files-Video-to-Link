@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { VideoPlayer } from "@/components/video-player";
 import { Download, Share, Eye, FileText, Image, Video, File } from "lucide-react";
 import { useState } from "react";
-import { clientStorage } from "@/lib/clientStorage";
 
 interface SharedFile {
   id: string;
@@ -25,8 +24,7 @@ export default function Shared() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const { data: file, isLoading, error } = useQuery<SharedFile>({
-    queryKey: ["shared-file", shareId],
-    queryFn: () => clientStorage.getFileByShareId(shareId!),
+    queryKey: ["/api/share", shareId],
     enabled: !!shareId,
   });
 

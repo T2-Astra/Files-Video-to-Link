@@ -40,13 +40,15 @@ export function UploadZone({ onFilesUploaded, onUploadStart, onUploadProgress }:
       // Call the parent handler with the files
       onFilesUploaded(files);
       
-      // Don't show success toast here - let parent handle it
     } catch (error) {
       console.error('Upload error in UploadZone:', error);
-      
-      // Don't show error toast here - let parent handle it
-      // Just reset progress
       onUploadProgress(0);
+      
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

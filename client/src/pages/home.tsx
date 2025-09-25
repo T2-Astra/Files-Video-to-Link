@@ -5,9 +5,22 @@ import { FileGrid } from "@/components/file-grid";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { clientStorage, type FileItem } from "@/lib/clientStorage";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Share, Trash2, HelpCircle, Sparkles, Sun, Moon } from "lucide-react";
+
+interface FileItem {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  shareId: string;
+  isFolder: boolean;
+  parentId?: string;
+  createdAt: string;
+  dataUrl?: string;
+}
 
 export default function Home() {
   const { toast } = useToast();
@@ -23,8 +36,7 @@ export default function Home() {
   });
 
   const { data: files = [], isLoading, refetch } = useQuery<FileItem[]>({
-    queryKey: ["files"],
-    queryFn: () => clientStorage.getFilesList(),
+    queryKey: ["/api/files"],
   });
 
   // Apply theme on mount
@@ -35,7 +47,22 @@ export default function Home() {
   const handleFilesUploaded = async (uploadedFiles: File[]) => {
     try {
       setIsUploading(true);
-      await clientStorage.uploadFiles(uploadedFiles);
+      
+      const formData = new FormData();
+      uploadedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      const response = await fetch('/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
       await refetch();
       setIsUploading(false);
       setUploadProgress(0);
@@ -85,7 +112,7 @@ export default function Home() {
 
   const handleClearAll = async () => {
     try {
-      await clientStorage.deleteAllFiles();
+      await apiRequest("DELETE", "/api/files");
       await refetch();
       toast({
         title: "Files cleared",
