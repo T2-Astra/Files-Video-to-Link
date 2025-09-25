@@ -4,6 +4,7 @@ import { UploadZone } from "@/components/upload-zone";
 import { FileGrid } from "@/components/file-grid";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { clientStorage, type FileItem } from "@/lib/clientStorage";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Share, Trash2, HelpCircle, Sparkles, Sun, Moon } from "lucide-react";
@@ -13,11 +14,12 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Initialize from localStorage or system preference
+    // Initialize from localStorage, default to light mode
     const stored = localStorage.getItem('theme');
     if (stored) return stored === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return false; // Default to light mode
   });
 
   const { data: files = [], isLoading, refetch } = useQuery<FileItem[]>({
@@ -125,7 +127,13 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" data-testid="button-help">
+              <Button 
+                onClick={() => setIsHelpOpen(true)}
+                variant="ghost" 
+                size="sm" 
+                data-testid="button-help"
+                title="Help & About"
+              >
                 <HelpCircle className="h-5 w-5" />
               </Button>
               <Button 
@@ -242,6 +250,72 @@ export default function Home() {
           )}
         </section>
       </main>
+
+      {/* Help Dialog */}
+      <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-primary" />
+              MediaCraft - Help & About
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-3">Welcome to MediaCraft by Astra</h3>
+              <p className="text-muted-foreground">
+                A beautiful, modern file sharing platform that makes it easy to upload, share, and manage your files with unique branded links.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold text-foreground mb-2">🚀 Features</h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li>• Drag & drop file uploads</li>
+                  <li>• Beautiful file previews</li>
+                  <li>• Branded share links (Astra-ABC123)</li>
+                  <li>• Dark/Light theme toggle</li>
+                  <li>• Secure file storage</li>
+                  <li>• Download & share files easily</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-foreground mb-2">💡 How to Use</h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li>1. Drag files or click "Choose Files"</li>
+                  <li>2. Files are uploaded instantly</li>
+                  <li>3. Click the link icon to copy share URL</li>
+                  <li>4. Share the Astra-branded link</li>
+                  <li>5. Use theme toggle for dark mode</li>
+                  <li>6. Preview files by clicking them</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Created by Astra</p>
+                  <p className="text-xs text-muted-foreground">Professional file sharing made simple</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={toggleTheme}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    {isDarkMode ? 'Light' : 'Dark'} Mode
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
