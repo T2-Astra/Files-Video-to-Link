@@ -39,9 +39,17 @@ export function PreviewModal({ file, isOpen, onClose }: PreviewModalProps) {
 
   const handleDownload = async () => {
     try {
-      const downloadUrl = `/api/share/${file.shareId}/download`;
+      if (!file.dataUrl) {
+        toast({
+          title: "Download failed",
+          description: "File data not available",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const a = document.createElement('a');
-      a.href = downloadUrl;
+      a.href = file.dataUrl;
       a.download = file.originalName;
       document.body.appendChild(a);
       a.click();
@@ -98,21 +106,21 @@ export function PreviewModal({ file, isOpen, onClose }: PreviewModalProps) {
         <div className="p-6">
           {/* Preview Content */}
           <div className="bg-muted rounded-lg flex items-center justify-center min-h-[300px] mb-6">
-            {isVideo(file.mimeType) ? (
+            {isVideo(file.mimeType) && file.dataUrl ? (
               <VideoPlayer
-                src={`/api/share/${file.shareId}/content`}
+                src={file.dataUrl}
                 className="max-w-full max-h-[500px]"
               />
-            ) : isImage(file.mimeType) ? (
+            ) : isImage(file.mimeType) && file.dataUrl ? (
               <img
-                src={`/api/share/${file.shareId}/content`}
+                src={file.dataUrl}
                 alt={file.originalName}
                 className="max-w-full max-h-[500px] object-contain rounded"
                 data-testid="preview-image"
               />
-            ) : isPDF(file.mimeType) ? (
+            ) : isPDF(file.mimeType) && file.dataUrl ? (
               <iframe
-                src={`/api/share/${file.shareId}/content`}
+                src={file.dataUrl}
                 className="w-full h-[500px] rounded"
                 title={file.originalName}
                 data-testid="preview-pdf"

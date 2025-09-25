@@ -82,9 +82,17 @@ export function FileCard({ file, onFileDeleted }: FileCardProps) {
 
   const handleDownload = async () => {
     try {
-      const downloadUrl = `/api/share/${file.shareId}/download`;
+      if (!file.dataUrl) {
+        toast({
+          title: "Download failed",
+          description: "File data not available",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const a = document.createElement('a');
-      a.href = downloadUrl;
+      a.href = file.dataUrl;
       a.download = file.originalName;
       document.body.appendChild(a);
       a.click();

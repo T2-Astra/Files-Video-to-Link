@@ -49,9 +49,9 @@ class ClientStorage {
       const newFiles: FileItem[] = [];
 
       for (const file of files) {
-        // Check file size limit (5MB per file to avoid localStorage issues)
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error(`File "${file.name}" is too large. Maximum size is 5MB.`);
+        // Check file size limit (100MB per file)
+        if (file.size > 100 * 1024 * 1024) {
+          throw new Error(`File "${file.name}" is too large. Maximum size is 100MB.`);
         }
 
         const shareId = generateCustomShareId();

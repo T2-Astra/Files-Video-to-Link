@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { VideoPlayer } from "@/components/video-player";
 import { Download, Share, Eye, FileText, Image, Video, File } from "lucide-react";
 import { useState } from "react";
+import { clientStorage } from "@/lib/clientStorage";
 
 interface SharedFile {
   id: string;
@@ -12,11 +13,11 @@ interface SharedFile {
   originalName: string;
   mimeType: string;
   size: number;
-  path: string;
   shareId: string;
   isFolder: boolean;
   parentId?: string;
   createdAt: string;
+  dataUrl?: string;
 }
 
 export default function Shared() {
@@ -24,7 +25,8 @@ export default function Shared() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const { data: file, isLoading, error } = useQuery<SharedFile>({
-    queryKey: ["/api/share", shareId],
+    queryKey: ["shared-file", shareId],
+    queryFn: () => clientStorage.getFileByShareId(shareId!),
     enabled: !!shareId,
   });
 
@@ -47,10 +49,11 @@ export default function Shared() {
   const isPDF = (mimeType: string) => mimeType.includes('pdf');
 
   const handleDownload = () => {
-    if (!file) return;
-    const downloadUrl = `/api/share/${file.shareId}/download`;
+    if (!file || !file.dataUrl) return;
+    
+    // Create download link from base64 data
     const a = document.createElement('a');
-    a.href = downloadUrl;
+    a.href = file.dataUrl;
     a.download = file.originalName;
     document.body.appendChild(a);
     a.click();
@@ -125,15 +128,15 @@ export default function Shared() {
         <Card className="overflow-hidden">
           {/* Preview Area */}
           <div className="bg-muted min-h-[400px] flex items-center justify-center">
-            {isVideo(file.mimeType) ? (
+            {isVideo(file.mimeType) && file.dataUrl ? (
               <VideoPlayer
-                src={`/api/share/${file.shareId}/content`}
+                src={file.dataUrl}
                 poster={undefined}
                 className="max-w-full max-h-[600px]"
               />
-            ) : isImage(file.mimeType) ? (
+            ) : isImage(file.mimeType) && file.dataUrl ? (
               <img
-                src={`/api/share/${file.shareId}/content`}
+                src={file.dataUrl}
                 alt={file.originalName}
                 className="max-w-full max-h-[600px] object-contain"
                 data-testid="img-preview"
@@ -186,10 +189,10 @@ export default function Shared() {
         </Card>
 
         {/* PDF Embed Preview */}
-        {isPDF(file.mimeType) && isPreviewOpen && (
+        {isPDF(file.mimeType) && isPreviewOpen && file.dataUrl && (
           <Card className="mt-6 overflow-hidden">
             <iframe
-              src={`/api/share/${file.shareId}/content`}
+              src={file.dataUrl}
               className="w-full h-[800px]"
               title={file.originalName}
             />
