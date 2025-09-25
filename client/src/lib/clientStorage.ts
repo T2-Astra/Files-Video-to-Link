@@ -19,8 +19,8 @@ function generateCustomShareId(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
   
-  // Generate 6 character code
-  for (let i = 0; i < 6; i++) {
+  // Generate 8 character code for better uniqueness
+  for (let i = 0; i < 8; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   
@@ -44,34 +44,59 @@ class ClientStorage {
   }
 
   async uploadFiles(files: File[]): Promise<FileItem[]> {
-    const existingFiles = this.getFiles();
-    const newFiles: FileItem[] = [];
+    try {
+      const existingFiles = this.getFiles();
+      const newFiles: FileItem[] = [];
 
-    for (const file of files) {
-      const shareId = generateCustomShareId();
-      const fileId = nanoid();
+      for (const file of files) {
+        // Check file size limit (5MB per file to avoid localStorage issues)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`File "${file.name}" is too large. Maximum size is 5MB.`);
+        }
+
+        const shareId = generateCustomShareId();
+        const fileId = nanoid();
+        
+        // Convert file to base64 for storage
+        let dataUrl: string;
+        try {
+          dataUrl = await this.fileToBase64(file);
+        } catch (error) {
+          throw new Error(`Failed to process file "${file.name}". Please try again.`);
+        }
+        
+        const fileItem: FileItem = {
+          id: fileId,
+          filename: `${Date.now()}-${fileId}${this.getFileExtension(file.name)}`,
+          originalName: file.name,
+          mimeType: file.type,
+          size: file.size,
+          shareId,
+          isFolder: false,
+          createdAt: new Date().toISOString(),
+          dataUrl
+        };
+        
+        newFiles.push(fileItem);
+      }
+
+      const allFiles = [...existingFiles, ...newFiles];
       
-      // Convert file to base64 for storage
-      const dataUrl = await this.fileToBase64(file);
+      // Try to save files and check for localStorage quota exceeded
+      try {
+        this.saveFiles(allFiles);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+          throw new Error('Storage quota exceeded. Please delete some files and try again.');
+        }
+        throw new Error('Failed to save files. Please try again.');
+      }
       
-      const fileItem: FileItem = {
-        id: fileId,
-        filename: `${Date.now()}-${fileId}${this.getFileExtension(file.name)}`,
-        originalName: file.name,
-        mimeType: file.type,
-        size: file.size,
-        shareId,
-        isFolder: false,
-        createdAt: new Date().toISOString(),
-        dataUrl
-      };
-      
-      newFiles.push(fileItem);
+      return newFiles;
+    } catch (error) {
+      console.error('Upload error in clientStorage:', error);
+      throw error;
     }
-
-    const allFiles = [...existingFiles, ...newFiles];
-    this.saveFiles(allFiles);
-    return newFiles;
   }
 
   async getFilesList(): Promise<FileItem[]> {

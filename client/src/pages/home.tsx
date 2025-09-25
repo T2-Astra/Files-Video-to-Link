@@ -41,13 +41,18 @@ export default function Home() {
       setUploadProgress(0);
       toast({
         title: "Upload complete",
-        description: "Your files have been uploaded successfully",
+        description: `${uploadedFiles.length} file(s) uploaded successfully`,
       });
     } catch (error) {
       setIsUploading(false);
+      setUploadProgress(0);
+      
+      // Show specific error message
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload files. Please try again.";
+      
       toast({
         title: "Upload failed",
-        description: "Failed to upload files. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
