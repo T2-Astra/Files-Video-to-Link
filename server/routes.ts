@@ -8,6 +8,41 @@ import archiver from "archiver";
 import { randomUUID } from "crypto";
 import mime from "mime-types";
 
+// Custom share ID generator for branded URLs
+async function generateCustomShareId(): Promise<string> {
+  const prefix = "Astra"; // Astra personal branding
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  
+  let attempts = 0;
+  const maxAttempts = 100;
+  
+  while (attempts < maxAttempts) {
+    let result = "";
+    
+    // Generate 6 character code
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    const shareId = `${prefix}-${result}`;
+    
+    // Check if this shareId already exists
+    try {
+      const existing = await storage.getFileByShareId(shareId);
+      if (!existing) {
+        return shareId; // Unique ID found
+      }
+    } catch (error) {
+      return shareId; // If error checking, assume it's unique
+    }
+    
+    attempts++;
+  }
+  
+  // Fallback to UUID if we can't generate unique custom ID
+  return `Astra-${randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
@@ -44,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const createdFiles = [];
       for (const file of files) {
-        const shareId = randomUUID();
+        const shareId = await generateCustomShareId();
         const createdFile = await storage.createFile({
           filename: file.filename,
           originalName: file.originalname,

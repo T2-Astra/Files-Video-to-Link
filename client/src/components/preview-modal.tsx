@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { VideoPlayer } from "./video-player";
-import { Download, Link, X } from "lucide-react";
+import { Download, Link } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FileItem {
@@ -92,15 +92,6 @@ export function PreviewModal({ file, isOpen, onClose }: PreviewModalProps) {
                 {formatFileSize(file.size)} • {file.mimeType.split('/')[1]?.toUpperCase() || 'FILE'}
               </p>
             </div>
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="sm"
-              className="w-10 h-10 p-0"
-              data-testid="button-close-preview"
-            >
-              <X className="h-5 w-5" />
-            </Button>
           </div>
         </DialogHeader>
 

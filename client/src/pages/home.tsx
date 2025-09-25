@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UploadZone } from "@/components/upload-zone";
 import { FileGrid } from "@/components/file-grid";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Share, Trash2, HelpCircle, Sparkles } from "lucide-react";
+import { Download, Share, Trash2, HelpCircle, Sparkles, Sun, Moon } from "lucide-react";
 
 interface FileItem {
   id: string;
@@ -25,10 +25,21 @@ export default function Home() {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Initialize from localStorage or system preference
+    const stored = localStorage.getItem('theme');
+    if (stored) return stored === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   const { data: files = [], isLoading, refetch } = useQuery<FileItem[]>({
     queryKey: ["/api/files"],
   });
+
+  // Apply theme on mount
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+  }, [isDarkMode]);
 
   const handleFilesUploaded = async () => {
     await refetch();
@@ -96,6 +107,13 @@ export default function Home() {
 
   const totalSize = files.reduce((sum, file) => sum + file.size, 0);
 
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', newTheme);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -103,7 +121,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
                 <Sparkles className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
@@ -115,8 +133,15 @@ export default function Home() {
               <Button variant="ghost" size="sm" data-testid="button-help">
                 <HelpCircle className="h-5 w-5" />
               </Button>
-              <Button data-testid="button-get-started">
-                Get Started
+              <Button 
+                onClick={toggleTheme}
+                variant="outline"
+                size="sm"
+                className="w-10 h-10 p-0"
+                data-testid="button-theme-toggle"
+                title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
             </div>
           </div>
